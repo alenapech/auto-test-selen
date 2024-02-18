@@ -43,6 +43,45 @@ public class GeekBrainsTests {
     }
 
     @Test
+    public void testGeekBrainsStandInvalidCredentialsLogin() {
+        loginPage.invalidCredentialsLogin();
+        assertEquals("Invalid credentials.", loginPage.getInvalidCredentialsLoginText());
+        saveScreenshotWithMillis("invalid-creds");
+    }
+
+    @Test
+    public void testCheckDummyCredentialsOnMainPage() {
+        loginPage.login(USERNAME, PASSWORD);
+        mainPage = new MainPage(driver, wait);
+        assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
+        String dummyTestLogin = "dummy" + System.currentTimeMillis();
+        mainPage.createDummy(dummyTestLogin);
+        mainPage.closeCreateDummyModalWindow();
+        assertEquals("active", mainPage.getStatusOfDummyWithTitle(dummyTestLogin));
+        mainPage.clickKeyIconOnDummyWithTitle(dummyTestLogin);
+        assertEquals("Dummy credentials", mainPage.getTitleOfDummyCredentialModalWindow());
+        assertTrue(mainPage.getContentOfDummyCredentialModalWindow().contains(String.format("Login: %s PW: ", dummyTestLogin)));
+        saveScreenshot(dummyTestLogin);
+    }
+
+    @Test
+    public void testEditingDummyOnMainPage() {
+        loginPage.login(USERNAME, PASSWORD);
+        mainPage = new MainPage(driver, wait);
+        assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
+        String dummyTestLogin = "dummy" + System.currentTimeMillis();
+        mainPage.createDummy(dummyTestLogin);
+        mainPage.closeCreateDummyModalWindow();
+        assertEquals("active", mainPage.getStatusOfDummyWithTitle(dummyTestLogin));
+        String dummyId = mainPage.getIdOfDummyWithTitle(dummyTestLogin);
+        mainPage.clickEditIconOnDummyWithTitle(dummyTestLogin);
+        String newDummyFirstName = dummyTestLogin + "-changed";
+        mainPage.editDummy(newDummyFirstName);
+        assertEquals(newDummyFirstName, mainPage.getTitleOfDummyWithId(dummyId));
+        saveScreenshot(dummyTestLogin);
+    }
+
+    @Test
     public void testAddingDummyOnMainPage() {
         loginPage.login(USERNAME, PASSWORD);
         mainPage = new MainPage(driver, wait);
@@ -56,6 +95,10 @@ public class GeekBrainsTests {
         mainPage.clickRestoreFromTrashIconOnDummyWithTitle(dummyTestLogin);
         assertEquals("active", mainPage.getStatusOfDummyWithTitle(dummyTestLogin));
         saveScreenshot(dummyTestLogin);
+    }
+
+    private void saveScreenshotWithMillis(String name) {
+        saveScreenshot(name + System.currentTimeMillis());
     }
 
     private void saveScreenshot(String name) {

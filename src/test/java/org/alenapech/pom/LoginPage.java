@@ -20,6 +20,9 @@ public class LoginPage {
     @FindBy(css="form#login button")
     private WebElement loginButton;
 
+    @FindBy(xpath = "//div[contains(@class, 'error-block')]/p[1]")
+    private WebElement invalidCredentialsMessage;
+
     public LoginPage(WebDriver driver, WebDriverWait wait) {
         PageFactory.initElements(driver, this);
         this.wait = wait;
@@ -29,6 +32,15 @@ public class LoginPage {
         typeUsernameInField(username);
         typePasswordInField(password);
         clickLoginButton();
+    }
+
+    public void invalidCredentialsLogin() {
+        clickLoginButton();
+    }
+
+    public String getInvalidCredentialsLoginText() {
+        return wait.until(ExpectedConditions.visibilityOf(invalidCredentialsMessage))
+                .getText();
     }
 
     public void clickLoginButton() {

@@ -15,6 +15,10 @@ public class DummyTableRow {
         this.root = root;
     }
 
+    public String getId() {
+        return root.findElement(By.xpath("./td[1]")).getText();
+    }
+
     public String getTitle() {
         return root.findElement(By.xpath("./td[2]")).getText();
     }
@@ -39,5 +43,13 @@ public class DummyTableRow {
                 .pollingEvery(Duration.ofSeconds(5))
                 .ignoring(NoSuchElementException.class)
                 .until(root -> root.findElement(By.xpath("./td/button[text()='delete']")));
+    }
+
+    public void clickEditButton() {
+        root.findElement(By.xpath("./td/button[text()='edit']")).click();
+    }
+
+    public void clickKeyButton() {
+        root.findElement(By.xpath("./td/button[text()='key']")).click();
     }
 }

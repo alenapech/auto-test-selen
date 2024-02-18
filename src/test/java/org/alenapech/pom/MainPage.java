@@ -2,6 +2,7 @@ package org.alenapech.pom;
 
 import org.alenapech.pom.elements.DummyTableRow;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -37,6 +38,12 @@ public class MainPage {
     @FindBy(xpath = "//table[@aria-label='Dummies list']/tbody/tr")
     private List<WebElement> rowsInDummyTable;
 
+    @FindBy(xpath = "//div[@class='mdc-dialog__surface' and @role='alertdialog']//h2[@id='simple-title']")
+    private WebElement dummyCredentialsModalWindowTitle;
+
+    @FindBy(xpath = "//div[@class='mdc-dialog__content']")
+    private WebElement dummyCredentialsModalWindowContent;
+
     public MainPage(WebDriver driver, WebDriverWait wait) {
         this.wait = wait;
         PageFactory.initElements(driver, this);
@@ -53,6 +60,12 @@ public class MainPage {
         wait.until(ExpectedConditions.visibilityOf(dummyFirstNameField)).sendKeys(dummyLogin);
         submitButtonOnModalWindow.click();
         waitAndGetDummyTitleByText(dummyLogin);
+    }
+
+    public void editDummy(String newDummyFirstName) {
+        wait.until(ExpectedConditions.visibilityOf(dummyFirstNameField)).sendKeys(Keys.chord(Keys.CONTROL, "a"), newDummyFirstName);
+        submitButtonOnModalWindow.click();
+        waitAndGetDummyTitleByText(newDummyFirstName);
     }
 
     public void closeCreateDummyModalWindow() {
@@ -82,5 +95,37 @@ public class MainPage {
                 .map(DummyTableRow::new)
                 .filter(row -> title.equals(row.getTitle()))
                 .findFirst().orElseThrow();
+    }
+
+    private DummyTableRow getRowById(String id) {
+        return rowsInDummyTable.stream()
+                .map(DummyTableRow::new)
+                .filter(row -> id.equals(row.getId()))
+                .findFirst().orElseThrow();
+    }
+
+    public String getIdOfDummyWithTitle(String title) {
+        return getRowByTitle(title).getId();
+    }
+
+    public void clickEditIconOnDummyWithTitle(String title) {
+        getRowByTitle(title).clickEditButton();
+    }
+
+    public String getTitleOfDummyWithId(String id) {
+        return getRowById(id).getTitle();
+    }
+
+    public void clickKeyIconOnDummyWithTitle(String title) {
+        getRowByTitle(title).clickKeyButton();
+    }
+
+    public String getTitleOfDummyCredentialModalWindow() {
+        return wait.until(ExpectedConditions.visibilityOf(dummyCredentialsModalWindowTitle)).getText();
+    }
+
+    public String getContentOfDummyCredentialModalWindow() {
+        return wait.until(ExpectedConditions.visibilityOf(dummyCredentialsModalWindowContent))
+                .getText().replace("\n", " ");
     }
 }
