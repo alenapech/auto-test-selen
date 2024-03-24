@@ -1,6 +1,7 @@
 package org.alenapech.pom;
 
 import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import org.alenapech.pom.elements.DummyTableRow;
 import org.openqa.selenium.support.FindBy;
@@ -48,7 +49,9 @@ public class MainPage {
     }
 
     public void editDummy(String newDummyFirstName) {
+        Selenide.sleep(500);
         dummyFirstNameField.shouldBe(visible).setValue(newDummyFirstName);
+        Selenide.sleep(500);
         submitButtonOnModalWindow.shouldBe(visible).click();
         waitAndGetDummyTitleByText(newDummyFirstName);
     }

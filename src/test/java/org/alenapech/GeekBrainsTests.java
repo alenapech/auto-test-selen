@@ -1,11 +1,17 @@
 package org.alenapech;
 
+import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import org.alenapech.pom.LoginPage;
 import org.alenapech.pom.MainPage;
 import org.alenapech.pom.ProfilePage;
 import org.junit.jupiter.api.*;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +27,13 @@ public class GeekBrainsTests {
 
     @BeforeAll
     static void beforeAll() {
+        Configuration.remote = "http://localhost:4444/wd/hub";
+        Configuration.browser = "chrome";
+        Configuration.browserVersion = "122";
+        Map<String, Object> options = new HashMap<>();
+        options.put("enableVNC", true);
+        options.put("enableLog", true);
+        Configuration.browserCapabilities.setCapability("selenoid:options", options);
         USERNAME = System.getProperty("geekbrains.username", System.getenv("geekbrains.username"));;
         PASSWORD = System.getProperty("geekbrains.password", System.getenv("geekbrains.password"));
     }
@@ -94,8 +107,44 @@ public class GeekBrainsTests {
         mainPage.clickProfileLink();
         ProfilePage profilePage = Selenide.page(ProfilePage.class);
         assertEquals("GB202305 ee7820", profilePage.getFullNameFromAdditionalInfo());
-        assertEquals("GB202305 ee7820", profilePage.getFullNameFromAdditionalInfo());
+        assertEquals("GB202305 ee7820", profilePage.getFullNameFromAvatarSection());
         saveScreenshotWithMillis("full-name-on-profile-page");
+    }
+
+    @Test
+    public void testAvatarOnEditingPopupOnProfilePage() {
+        loginPage.login(USERNAME, PASSWORD);
+        mainPage = Selenide.page(MainPage.class);
+        assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
+        mainPage.clickUsernameLabel();
+        mainPage.clickProfileLink();
+        ProfilePage profilePage = Selenide.page(ProfilePage.class);
+        profilePage.clickEditIconInAvatarSection();
+        assertEquals("", profilePage.getAvatarInputValueOnSettingPopup());
+        String filePath = "src\\test\\resources\\avatar.png";
+        profilePage.uploadPictureFileToAvatarField(filePath);
+        assertEquals(filePath.substring(filePath.lastIndexOf("\\") + 1),
+                profilePage.getAvatarInputValueOnSettingPopup());
+        saveScreenshotWithMillis("test-avatar-on-profile-page");
+    }
+
+    @Test
+    public void testDateOfBirthOnProfilePage() {
+        loginPage.login(USERNAME, PASSWORD);
+        mainPage = Selenide.page(MainPage.class);
+        assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
+        mainPage.clickUsernameLabel();
+        mainPage.clickProfileLink();
+        ProfilePage profilePage = Selenide.page(ProfilePage.class);
+        profilePage.clickEditIconInAvatarSection();
+        LocalDate birthday = LocalDate.parse("2007-12-11");
+        String phone = "11111111111";
+        profilePage.editBirthdate(birthday);
+        profilePage.editPhone(phone); // phone is mandatory, so it should be filled to store birthdate
+        profilePage.submitProfileChanges();
+        assertEquals(birthday.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")), profilePage.getBirthdateOnAdditionalInfo());
+        assertEquals(phone, profilePage.getPhoneOnAdditionalInfo());
+        saveScreenshotWithMillis("test-date-of-birth-on-profile-page");
     }
 
     private void saveScreenshotWithMillis(String name) {
@@ -103,7 +152,7 @@ public class GeekBrainsTests {
     }
 
     private void saveScreenshot(String name) {
-        Selenide.screenshot(SCREENSHOT_PATH + name + ".png");
+        Selenide.screenshot(SCREENSHOT_PATH + name);
     }
 
     @AfterEach
