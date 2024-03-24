@@ -1,24 +1,17 @@
 package org.alenapech;
 
+import com.codeborne.selenide.Selenide;
+import com.codeborne.selenide.WebDriverRunner;
 import org.alenapech.pom.LoginPage;
 import org.alenapech.pom.MainPage;
-import org.apache.commons.io.FileUtils;
+import org.alenapech.pom.ProfilePage;
 import org.junit.jupiter.api.*;
-import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.io.File;
-import java.io.IOException;
-import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GeekBrainsTests {
 
-    private WebDriver driver;
-    private WebDriverWait wait;
     private static String USERNAME;
     private static String PASSWORD;
     private LoginPage loginPage;
@@ -28,18 +21,14 @@ public class GeekBrainsTests {
 
     @BeforeAll
     static void beforeAll() {
-        System.setProperty("webdriver.chrome.driver", "src\\main\\resources\\chromedriver.exe");
         USERNAME = System.getProperty("geekbrains.username", System.getenv("geekbrains.username"));;
         PASSWORD = System.getProperty("geekbrains.password", System.getenv("geekbrains.password"));
     }
 
     @BeforeEach
     void setUp() {
-        driver = new ChromeDriver();
-        driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        driver.get("https://test-stand.gb.ru/login");
-        loginPage = new LoginPage(driver, wait);
+        Selenide.open("https://test-stand.gb.ru/login");
+        loginPage = Selenide.page(LoginPage.class);
     }
 
     @Test
@@ -52,7 +41,7 @@ public class GeekBrainsTests {
     @Test
     public void testCheckDummyCredentialsOnMainPage() {
         loginPage.login(USERNAME, PASSWORD);
-        mainPage = new MainPage(driver, wait);
+        mainPage = Selenide.page(MainPage.class);
         assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
         String dummyTestLogin = "dummy" + System.currentTimeMillis();
         mainPage.createDummy(dummyTestLogin);
@@ -67,7 +56,7 @@ public class GeekBrainsTests {
     @Test
     public void testEditingDummyOnMainPage() {
         loginPage.login(USERNAME, PASSWORD);
-        mainPage = new MainPage(driver, wait);
+        mainPage = Selenide.page(MainPage.class);
         assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
         String dummyTestLogin = "dummy" + System.currentTimeMillis();
         mainPage.createDummy(dummyTestLogin);
@@ -84,7 +73,7 @@ public class GeekBrainsTests {
     @Test
     public void testAddingDummyOnMainPage() {
         loginPage.login(USERNAME, PASSWORD);
-        mainPage = new MainPage(driver, wait);
+        mainPage = Selenide.page(MainPage.class);
         assertTrue(mainPage.getUsernameLabelText().contains(USERNAME));
         String dummyTestLogin = "dummy" + System.currentTimeMillis();
         mainPage.createDummy(dummyTestLogin);
@@ -97,21 +86,28 @@ public class GeekBrainsTests {
         saveScreenshot(dummyTestLogin);
     }
 
+    @Test
+    public void testFullNameOnProfilePage() {
+        loginPage.login(USERNAME, PASSWORD);
+        mainPage = Selenide.page(MainPage.class);
+        mainPage.clickUsernameLabel();
+        mainPage.clickProfileLink();
+        ProfilePage profilePage = Selenide.page(ProfilePage.class);
+        assertEquals("GB202305 ee7820", profilePage.getFullNameFromAdditionalInfo());
+        assertEquals("GB202305 ee7820", profilePage.getFullNameFromAdditionalInfo());
+        saveScreenshotWithMillis("full-name-on-profile-page");
+    }
+
     private void saveScreenshotWithMillis(String name) {
         saveScreenshot(name + System.currentTimeMillis());
     }
 
     private void saveScreenshot(String name) {
-        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-        try {
-            FileUtils.copyFile(screenshot, new File(SCREENSHOT_PATH + name + ".png"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Selenide.screenshot(SCREENSHOT_PATH + name + ".png");
     }
 
     @AfterEach
     void tearDown() {
-        driver.quit();
+        WebDriverRunner.closeWebDriver();
     }
 }

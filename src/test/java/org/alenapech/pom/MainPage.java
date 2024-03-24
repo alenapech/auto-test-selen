@@ -1,81 +1,65 @@
 package org.alenapech.pom;
 
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.SelenideElement;
 import org.alenapech.pom.elements.DummyTableRow;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.List;
+import static com.codeborne.selenide.CollectionCondition.sizeGreaterThan;
+import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Selenide.*;
 
 public class MainPage {
 
-    private final WebDriverWait wait;
-
     @FindBy(css = "nav li.mdc-menu-surface--anchor a")
-    private WebElement usernameLinkNavBar;
+    private SelenideElement usernameLinkNavBar;
 
     @FindBy(id = "create-btn")
-    private WebElement createDummyButton;
+    private SelenideElement createDummyButton;
 
     @FindBy(xpath = "//form//span[contains(text(), 'Login')]/following-sibling::input")
-    private WebElement dummyLoginField;
+    private SelenideElement dummyLoginField;
 
-    @FindBy(xpath = "//form//span[contains(text(), 'Fist Name')]/following-sibling::input")
-    private WebElement dummyFirstNameField;
+    private final SelenideElement dummyFirstNameField = $x("//form//span[contains(text(), 'Fist Name')]/following-sibling::input");
 
-    @FindBy(css = "form div.submit button")
-    private WebElement submitButtonOnModalWindow;
+    private final SelenideElement submitButtonOnModalWindow = $("form div.submit button");
 
-    @FindBy(xpath = "//span[text()='Creating Dummy']" +
-            "//ancestor::div[contains(@class, 'form-modal-header')]//button")
-    private WebElement closeCreateDummyIcon;
+    private final SelenideElement closeCreateDummyIcon = $x("//span[text()='Creating Dummy']" +
+            "//ancestor::div[contains(@class, 'form-modal-header')]//button");
 
-    @FindBy(xpath = "//table[@aria-label='Dummies list']/tbody/tr")
-    private List<WebElement> rowsInDummyTable;
+    private final ElementsCollection rowsInDummyTable = $$x("//table[@aria-label='Dummies list']/tbody/tr");
 
-    @FindBy(xpath = "//div[@class='mdc-dialog__surface' and @role='alertdialog']//h2[@id='simple-title']")
-    private WebElement dummyCredentialsModalWindowTitle;
+    private final SelenideElement dummyCredentialsModalWindowTitle = $x("//div[@class='mdc-dialog__surface' and @role='alertdialog']//h2[@id='simple-title']");
 
-    @FindBy(xpath = "//div[@class='mdc-dialog__content']")
-    private WebElement dummyCredentialsModalWindowContent;
+    private final SelenideElement dummyCredentialsModalWindowContent = $x("//div[@class='mdc-dialog__content']");
 
-    public MainPage(WebDriver driver, WebDriverWait wait) {
-        this.wait = wait;
-        PageFactory.initElements(driver, this);
-    }
+    private final SelenideElement profileLinkNavBar = $("nav li.mdc-menu-surface--anchor div li");
 
-    public WebElement waitAndGetDummyTitleByText(String title) {
-        String xpath = String.format("//table[@aria-label='Dummies list']/tbody//td[text()='%s']", title);
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+    public SelenideElement waitAndGetDummyTitleByText(String title) {
+        return $x(String.format("//table[@aria-label='Dummies list']/tbody//td[text()='%s']", title)).shouldBe(visible);
     }
 
     public void createDummy(String dummyLogin) {
-        wait.until(ExpectedConditions.visibilityOf(createDummyButton)).click();
-        wait.until(ExpectedConditions.visibilityOf(dummyLoginField)).sendKeys(dummyLogin);
-        wait.until(ExpectedConditions.visibilityOf(dummyFirstNameField)).sendKeys(dummyLogin);
-        submitButtonOnModalWindow.click();
+        createDummyButton.shouldBe(visible).click();
+        dummyLoginField.shouldBe(visible).setValue(dummyLogin);
+        dummyFirstNameField.shouldBe(visible).setValue(dummyLogin);
+        submitButtonOnModalWindow.shouldBe(visible).click();
         waitAndGetDummyTitleByText(dummyLogin);
     }
 
     public void editDummy(String newDummyFirstName) {
-        wait.until(ExpectedConditions.visibilityOf(dummyFirstNameField)).sendKeys(Keys.chord(Keys.CONTROL, "a"), newDummyFirstName);
-        submitButtonOnModalWindow.click();
+        dummyFirstNameField.shouldBe(visible).setValue(newDummyFirstName);
+        submitButtonOnModalWindow.shouldBe(visible).click();
         waitAndGetDummyTitleByText(newDummyFirstName);
     }
 
     public void closeCreateDummyModalWindow() {
-        closeCreateDummyIcon.click();
-        wait.until(ExpectedConditions.invisibilityOf(closeCreateDummyIcon));
+        closeCreateDummyIcon.shouldBe(visible).click();
+        closeCreateDummyIcon.shouldNotBe(visible);
     }
 
     public String getUsernameLabelText() {
-        return wait.until(ExpectedConditions.visibilityOf(usernameLinkNavBar))
-                .getText().replace("\n", " ");
+        return usernameLinkNavBar.shouldBe(visible).getText().replace("\n", " ");
     }
 
     public void clickTrashIconOnDummyWithTitle(String title) {
@@ -91,14 +75,18 @@ public class MainPage {
     }
 
     private DummyTableRow getRowByTitle(String title) {
-        return rowsInDummyTable.stream()
+        return rowsInDummyTable.shouldHave(sizeGreaterThan(0))
+                .asFixedIterable()
+                .stream()
                 .map(DummyTableRow::new)
                 .filter(row -> title.equals(row.getTitle()))
                 .findFirst().orElseThrow();
     }
 
     private DummyTableRow getRowById(String id) {
-        return rowsInDummyTable.stream()
+        return rowsInDummyTable.shouldHave(sizeGreaterThan(0))
+                .asFixedIterable()
+                .stream()
                 .map(DummyTableRow::new)
                 .filter(row -> id.equals(row.getId()))
                 .findFirst().orElseThrow();
@@ -121,11 +109,18 @@ public class MainPage {
     }
 
     public String getTitleOfDummyCredentialModalWindow() {
-        return wait.until(ExpectedConditions.visibilityOf(dummyCredentialsModalWindowTitle)).getText();
+        return dummyCredentialsModalWindowTitle.shouldBe(visible).getText();
     }
 
     public String getContentOfDummyCredentialModalWindow() {
-        return wait.until(ExpectedConditions.visibilityOf(dummyCredentialsModalWindowContent))
-                .getText().replace("\n", " ");
+        return dummyCredentialsModalWindowContent.shouldBe(visible).getText().replace("\n", " ");
+    }
+
+    public void clickUsernameLabel() {
+        usernameLinkNavBar.shouldBe(visible).click();
+    }
+
+    public void clickProfileLink() {
+        profileLinkNavBar.shouldBe(visible).click();
     }
 }
